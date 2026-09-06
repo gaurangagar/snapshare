@@ -1,0 +1,126 @@
+// SnapShare Database Schema
+// Optimized for Neon PostgreSQL with Connection Pooling
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Role {
+  ADMIN
+  TEAM_MEMBER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(TEAM_MEMBER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdEvents  Event[]           @relation("CreatedEvents")
+  assignments    EventAssignment[]
+  uploadedPhotos Photo[]
+
+  @@map("users")
+}
+
+model Event {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  eventDate     DateTime?
+  location      String?
+  coverPhotoUrl String?
+  createdById   String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  createdBy   User              @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: Cascade)
+  assignments EventAssignment[]
+  photos      Photo[]
+  galleries   Gallery[]
+
+  @@index([createdById])
+  @@map("events")
+}
+
+model EventAssignment {
+  id         String   @id @default(cuid())
+  eventId    String
+  userId     String
+  assignedAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_assignments")
+}
+
+model Photo {
+  id           String   @id @default(cuid())
+  eventId      String
+  uploadedById String
+  filename     String
+  storageUrl   String
+  fileSize     Int
+  mimeType     String
+  width        Int?
+  height       Int?
+  isSelected   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  uploadedBy    User           @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  galleryPhotos GalleryPhoto[]
+
+  @@index([eventId])
+  @@index([uploadedById])
+  @@index([isSelected])
+  @@map("photos")
+}
+
+model Gallery {
+  id          String    @id @default(cuid())
+  eventId     String
+  slug        String    @unique
+  title       String
+  pinHash     String
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  galleryPhotos GalleryPhoto[]
+
+  @@index([slug])
+  @@index([eventId])
+  @@map("galleries")
+}
+
+model GalleryPhoto {
+  id        String   @id @default(cuid())
+  galleryId String
+  photoId   String
+  order     Int      @default(0)
+  addedAt   DateTime @default(now())
+
+  gallery Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  photo   Photo   @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@unique([galleryId, photoId])
+  @@index([galleryId])
+  @@index([photoId])
+  @@map("gallery_photos")
+}
