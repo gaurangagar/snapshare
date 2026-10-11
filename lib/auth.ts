@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { Role } from "@prisma/client";
 
-const JWT_SECRET = process.env.JWT_SECRET || "snapshare-super-secret-jwt-key-2026-production-ready";
+const JWT_SECRET = process.env.JWT_SECRET;
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 export interface SessionUser {

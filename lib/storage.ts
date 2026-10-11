@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 export interface UploadResult {
   storageUrl: string;
@@ -54,7 +55,6 @@ export async function saveUploadedFile(
     try {
       console.log("[Storage] Attempting Cloud S3/R2 upload...");
 
-      const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
       const s3Client = new S3Client({
         region: process.env.AWS_REGION || "auto",
         endpoint: process.env.AWS_ENDPOINT, // Optional custom endpoint for Cloudflare R2 / MinIO
